@@ -14,6 +14,7 @@ function isDir {
 function handleFile {
     local path=$1
     local outDir=$2
+    local modTime=$3
     url=${driveUri}${path}
 
     echo $driveUri$path
@@ -24,6 +25,7 @@ function handleFile {
 
     filename=$(basename -- "$path")
     curl -s $url > ${outDir}/${filename}
+    touch -d $modTime ${outDir}/${filename}
 }
 
 function handleDirectory {
@@ -51,7 +53,7 @@ function handleDirectory {
         then
             handleDirectory ${path}${filename} ${outDir}/${filename}
         else
-            handleFile ${path}${filename} ${outDir}
+            handleFile ${path}${filename} ${outDir} ${modTime}
         fi
 
     done < <(printf "$gemData\n")
