@@ -31,7 +31,7 @@ function handleFile {
 function handleDirectory {
     local path=$1
     local outDir=$2
-    local gemUrl=${driveUri}/gemdrive/meta${path}ls.tsv
+    local gemUrl=${driveUri}${path}.gemdrive-ls.tsv
 
     echo $driveUri$path
 
