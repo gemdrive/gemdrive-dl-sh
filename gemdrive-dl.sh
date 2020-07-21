@@ -12,34 +12,35 @@ function isDir {
 }
 
 function handleFile {
-    local path=$1
+    local url=$1
     local outDir=$2
     local modTime=$3
-    url=${driveUri}${path}
 
-    echo $driveUri$path
+    echo $url
+
+    filename=$(basename -- "$url")
 
     if [ $token ]; then
-        url=${url}?access_token=${token}
+        curl -s -H "Authorization: Bearer ${token}" $url > ${outDir}/${filename}
+    else
+        curl -s $url > ${outDir}/${filename}
     fi
-
-    filename=$(basename -- "$path")
-    curl -s $url > ${outDir}/${filename}
     touch -d $modTime ${outDir}/${filename}
 }
 
 function handleDirectory {
-    local path=$1
+    local url=$1
     local outDir=$2
-    local gemUrl=${driveUri}${path}.gemdrive-ls.tsv
 
-    echo $driveUri$path
+    local gemUrl=${url}.gemdrive-ls.tsv
+
+    echo $url
 
     if [ $token ]; then
-        gemUrl=${gemUrl}?access_token=${token}
+        local gemData=$(curl -s -H "Authorization: Bearer ${token}" ${gemUrl})
+    else
+        local gemData=$(curl -s ${gemUrl})
     fi
-
-    local gemData=$(curl -s ${gemUrl})
 
     mkdir -p ${outDir}
 
@@ -51,19 +52,18 @@ function handleDirectory {
 
         if isDir $filename
         then
-            handleDirectory ${path}${filename} ${outDir}/${filename}
+            handleDirectory ${url}${filename} ${outDir}/${filename}
         else
-            handleFile ${path}${filename} ${outDir} ${modTime}
+            handleFile ${url}${filename} ${outDir} ${modTime}
         fi
 
     done < <(printf "$gemData\n")
 }
 
 
-driveUri=$1
-path=$2
-token=$3
-outDir=$4
+url=$1
+token=$2
+outDir=$3
 
 
 if [ -z $outDir ]
@@ -71,9 +71,9 @@ then
     outDir=.
 fi
 
-if isDir $path
+if isDir $url
 then
-    handleDirectory $path $outDir
+    handleDirectory $url $outDir
 else
-    handleFile $path $outDir
+    handleFile $url $outDir
 fi
